@@ -7,6 +7,7 @@
 
 vCheck defaults to look in the current directory for src/. However,
 you can explicitly set where vCheck should look. Examples:
+
     $ cd /path/to/project; vCheck
     $ vCheck /path/to/project/src
     $ vCheck -src=/path/to/project/src
