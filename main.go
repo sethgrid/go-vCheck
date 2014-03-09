@@ -8,12 +8,13 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 var srcDir string
 
 type VersionInfo struct {
-	Name, LocalVersion, RemoveVersion string
+	Name, LocalVersion, RemoteVersion string
 }
 
 func init() {
@@ -48,18 +49,34 @@ func main() {
 
 	fmt.Println("Checking all Sendgrid packages round in:", srcDir)
 	repos := getSendGridRepos(srcDir)
+	results := make([]*VersionInfo, 0)
 
+	wg := &sync.WaitGroup{}
 	for _, repo := range repos {
 		// if you don't have the os.env for the sendgrid github oauth token,
 		// you can replace the url below with your own fork and use your
 		// own token.
+		wg.Add(2)
+		info := &VersionInfo{Name: repo}
 
-		local := GetLocalVersion(srcDir + "github.com/sendgrid/" + repo + "/version.go")
-		remote := GetRemoteVersion("https://github.com/sendgrid/"+repo+"/blob/master/version.go", oauth_token)
+		go func() {
+			go func() {
+				info.LocalVersion = GetLocalVersion(srcDir + "github.com/sendgrid/" + repo + "/version.go")
+				wg.Done()
+			}()
+			go func() {
+				//info.RemoteVersion = GetRemoteVersion("https://github.com/sendgrid/"+repo+"/blob/master/version.go", oauth_token)
+				info.RemoteVersion = GetRemoteVersion("https://github.com/sethgrid/go-bloxorz/blob/master/README.md", oauth_token)
+				wg.Done()
+			}()
+		}()
+		results = append(results, info)
+	}
+	wg.Wait()
 
-		fmt.Println(repo)
-		fmt.Println("  Local: ", local)
-		fmt.Println("  GitHub:", remote, "\n")
+	for _, r := range results {
+		fmt.Printf("%s\n  Local:  %s\n  GitHub: %s\n",
+			r.Name, r.LocalVersion, r.RemoteVersion)
 	}
 }
 
@@ -104,8 +121,7 @@ func MatchVersion(source []byte) string {
 	expr := `VERSION.+(\d.\d.\d)`
 	r, err := regexp.Compile(expr)
 	if err != nil {
-		fmt.Println(err.Error())
-		return "ERROR"
+		friendlyExit(err.Error())
 	}
 	matches := r.FindSubmatch(source)
 	if len(matches) >= 2 {
