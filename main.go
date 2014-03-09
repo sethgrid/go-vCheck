@@ -65,8 +65,7 @@ func main() {
 				wg.Done()
 			}()
 			go func() {
-				//info.RemoteVersion = GetRemoteVersion("https://github.com/sendgrid/"+repo+"/blob/master/version.go", oauth_token)
-				info.RemoteVersion = GetRemoteVersion("https://github.com/sethgrid/go-bloxorz/blob/master/README.md", oauth_token)
+				info.RemoteVersion = GetRemoteVersion("https://github.com/sendgrid/"+repo+"/blob/master/version.go", oauth_token)
 				wg.Done()
 			}()
 		}()
