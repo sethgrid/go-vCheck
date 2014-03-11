@@ -15,7 +15,8 @@ you can explicitly set where vCheck should look. Examples:
 ##Environment Variable
 
 vCheck uses a Personal GitHub Access Token to make http requests to GitHub.
-See http://developer.github.com/v3/auth/#basic-authentication for OAuth Tokens.
+See http://developer.github.com/v3/auth/#basic-authentication for information on
+OAuth Tokens. To create a token, go here: https://github.com/settings/applications
 
 You can set the environment variable by exporting it or setting it when calling
 vCheck as shown in the example usage.
