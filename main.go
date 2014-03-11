@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +17,23 @@ var srcDir string
 
 type VersionInfo struct {
 	Name, LocalVersion, RemoteVersion string
+}
+
+type GitHubAPIResponse struct {
+	// technically, we only need Content
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Sha      string `json:"sha"`
+	Size     int    `json:"size"`
+	Url      string `json:"url"`
+	HtmlUrl  string `json:"html_url"`
+	GitUrl   string `json:"git_url"`
+	Type     string `json:"type"`
+	Content  string `json:"content"`
+	Encoding string `json:"encoding"`
+	Links    string `json:"_links"`
+	Git      string `json:"git"`
+	Html     string `json:"html"`
 }
 
 func init() {
@@ -59,16 +78,17 @@ func main() {
 		wg.Add(2)
 		info := &VersionInfo{Name: repo}
 
-		go func() {
+		go func(repo string) {
 			go func() {
 				info.LocalVersion = GetLocalVersion(srcDir + "github.com/sendgrid/" + repo + "/version.go")
 				wg.Done()
 			}()
 			go func() {
-				info.RemoteVersion = GetRemoteVersion("https://github.com/sendgrid/"+repo+"/blob/master/version.go", oauth_token)
+				info.RemoteVersion = GetRemoteVersion("https://api.github.com/repos/sendgrid/"+repo+"/contents/version.go?ref=master", oauth_token)
 				wg.Done()
 			}()
-		}()
+		}(repo)
+
 		results = append(results, info)
 	}
 	wg.Wait()
@@ -96,8 +116,7 @@ func GetRemoteVersion(httpPath, token string) string {
 	if err != nil {
 		friendlyExit(err.Error())
 	}
-
-	req.Header.Add(token, "x-oauth-basic")
+	req.Header.Add("Authorization", "token "+token)
 	resp, err := client.Do(req)
 	if err != nil {
 		friendlyExit(err.Error())
@@ -108,11 +127,15 @@ func GetRemoteVersion(httpPath, token string) string {
 	}
 
 	content, err := ioutil.ReadAll(resp.Body)
+	jsonResp := &GitHubAPIResponse{}
+	json.Unmarshal(content, jsonResp)
+
+	decoded, err := base64.StdEncoding.DecodeString(jsonResp.Content)
 	if err != nil {
 		friendlyExit(err.Error())
 	}
 
-	return MatchVersion(content)
+	return MatchVersion(decoded)
 }
 
 // regex match to find semantic version
