@@ -66,7 +66,7 @@ func main() {
 		friendlyExit("you must set the environment variable SG_GITHUB_TOKEN")
 	}
 
-	fmt.Println("Checking all Sendgrid packages round in:", srcDir)
+	fmt.Println("Checking all Sendgrid packages found in:", srcDir)
 	repos := getSendGridRepos(srcDir)
 	results := make([]*VersionInfo, 0)
 
